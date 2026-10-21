@@ -1,15 +1,16 @@
-# Coleta notícias sobre Serra Pelada no Google Notícias (RSS) e grava data/noticias.json.
+# Coleta notícias sobre o projeto Serra Pelada (Tec Tônicas, Coomigasp, SPCDM, Colossus, Helius) no Google Notícias e grava data/noticias.json.
 import json, re, html, urllib.request, urllib.parse, xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
 BUSCAS = [
-    '"Serra Pelada" (garimpo OR garimpeiros OR justiça OR processo OR decisão OR mineração OR ANM OR cooperativa)',
     'Coomigasp',
+    '"Tec Tônicas" OR "Tectônicas Mineração" OR "Tectonicas Mineracao"',
     '"Serra Pelada" (Helius OR Colossus OR SPCDM)',
-    '"Serra Pelada" Curionópolis',
+    '"Serra Pelada" (garimpo OR garimpeiros OR ANM OR SEMAS OR justiça OR decisão OR licença OR mineração OR ouro)',
 ]
-EXCLUIR = re.compile(r'\b(filme|novela|elenco|bilheteria|netflix|globoplay|série)\b', re.I)
+EXIGE = re.compile(r'serra pelada|coomigasp|tect[oô]nicas|tec t[oô]nicas|helius|colossus|spcdm', re.I)
+EXCLUIR = re.compile(r'\b(filme|novela|elenco|bilheteria|netflix|globoplay|série|cinema)\b', re.I)
 SAIDA = 'data/noticias.json'
 
 def buscar(q):
@@ -28,9 +29,8 @@ def buscar(q):
         except Exception:
             continue
         link = (it.findtext('link') or '').strip()
-        if not link.startswith('https://') or EXCLUIR.search(titulo):
-            continue
-        itens.append({'titulo': titulo, 'fonte': fonte, 'data': dt.isoformat(), 'url': link})
+        if link.startswith('https://'):
+            itens.append({'titulo': titulo, 'fonte': fonte, 'data': dt.isoformat(), 'url': link})
     return itens
 
 def main():
@@ -45,13 +45,15 @@ def main():
         except Exception as e:
             print('falha na busca', q, e)
     for i in todos + antigos:
+        if not EXIGE.search(i['titulo']) or EXCLUIR.search(i['titulo']):
+            continue
         chave = re.sub(r'\W+', '', i['titulo'].lower())[:80]
         if chave in vistos:
             continue
         vistos.add(chave)
         novos.append(i)
     novos.sort(key=lambda x: x['data'], reverse=True)
-    out = {'verificado': datetime.now(timezone.utc).isoformat(), 'itens': novos[:50]}
+    out = {'verificado': datetime.now(timezone.utc).isoformat(), 'itens': novos[:40]}
     json.dump(out, open(SAIDA, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     print(len(out['itens']), 'notícias')
 
