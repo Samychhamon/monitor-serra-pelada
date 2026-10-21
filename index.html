@@ -31,6 +31,226 @@ h1{font-family:var(--serif);font-weight:600;font-size:clamp(2rem,4vw,2.8rem);mar
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:12px}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
 .kpi .l{font-size:13px;color:var(--muted)}
+.kpi .v{white-space:nowrap;font-family:var(--serif);font-size:2rem;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi .n{font-size:12px;color:var(--muted)}
+.kpi.hl{background:var(--accent-soft);border-color:transparent}
+.sec{display:flex;flex-direction:column;gap:12px}
+.sec-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:10px}
+h2{font-size:18px;font-weight:600;margin:0}
+.note{font-size:13px;color:var(--muted);margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:13px;padding:4px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chip:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,22rem),1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.fr{font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.pill{font-size:12px;padding:2px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.pill.bad{color:var(--bad)}.pill.warn{color:var(--warn)}.pill.ok{color:var(--ok)}.pill.mute{color:var(--muted)}
+.card h3{font-size:16px;font-weight:600;margin:0;text-wrap:balance}
+.num{font-family:var(--mono);font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.org{font-size:13px;color:var(--muted)}
+.res{font-size:14px;margin:0}
+.next{border-top:1px solid var(--line);padding-top:8px;margin-top:auto;font-size:13px;display:flex;flex-direction:column;gap:2px}
+.next span:first-child{color:var(--muted);font-size:12px}
+.meta{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted)}
+.meta a{color:var(--accent)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,25rem),1fr));gap:12px;align-items:start}
+.stack{display:flex;flex-direction:column;gap:12px;min-width:0}
+.tl{list-style:none;margin:0;padding:0;max-height:36rem;overflow:auto}
+.tl li{display:grid;grid-template-columns:6.5rem 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.tl .d{font-family:var(--mono);font-size:12px;color:var(--muted);padding-top:2px}
+.tl .f{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.tl a{color:inherit;text-decoration-color:var(--line)}
+.tl a:hover{text-decoration-color:var(--accent)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+th{text-align:left;font-weight:500;color:var(--muted);border-bottom:1px solid var(--line);padding:6px 8px 6px 0}
+td{padding:8px 8px 8px 0;border-bottom:1px solid var(--line)}
+.r{text-align:right}
+.bars{display:flex;flex-direction:column;gap:10px}
+.bar{display:grid;grid-template-columns:6.5rem 1fr 5.5rem;gap:10px;align-items:center;font-size:13px}
+.bt{height:14px;border-radius:4px;background:var(--line);overflow:hidden}
+.bf{height:100%;border-radius:4px;background:var(--bar-muted)}
+.bar:first-child .bf{background:var(--accent)}
+.bv{text-align:right;font-variant-numeric:tabular-nums}
+footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+.err{color:var(--bad)}
+.news{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,22rem),1fr));gap:0 24px}
+.news li{display:flex;flex-direction:column;gap:2px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px;min-width:0}
+.news .s{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.news a{color:inherit;text-decoration-color:var(--line)}
+.news a:hover{text-decoration-color:var(--accent)}
+@media (max-width:480px){.tl li{grid-template-columns:1fr;gap:2px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Curionópolis · Pará</span>
+    <h1>Monitor Serra Pelada</h1>
+    <p class="take" id="take">Carregando dados…</p>
+    <span class="upd" id="upd"></span>
+  </header>
+
+  <section class="kpis" id="kpis" aria-label="Indicadores"></section>
+
+  <section class="sec" id="processos">
+    <div class="sec-h"><h2>Processos e frentes em andamento</h2><div class="chips" id="chips" role="group" aria-label="Filtrar por frente"></div></div>
+    <p class="note">Ordenados pela última movimentação. Cada cartão traz o próximo passo esperado e a fonte.</p>
+    <div class="grid" id="cards"></div>
+  </section>
+
+  <section class="card" id="noticias">
+    <div class="sec-h"><h2>Notícias recentes</h2><span class="note" id="news-upd"></span></div>
+    <p class="note">Manchetes coletadas automaticamente a cada hora no Google Notícias. Ainda não verificadas; os cartões acima trazem só o que foi confirmado.</p>
+    <ul class="news" id="news"></ul>
+  </section>
+
+  <div class="two">
+    <section class="card" id="linha-do-tempo">
+      <h2>Linha do tempo</h2>
+      <p class="note">Decisões e fatos desde 2025, do mais recente ao mais antigo.</p>
+      <ul class="tl" id="tl"></ul>
+    </section>
+    <div class="stack">
+      <section class="card" id="acordos">
+        <h2>Acordos trabalhistas homologados</h2>
+        <p class="note">3ª Vara do Trabalho de Parauapebas.</p>
+        <div class="tw"><table><thead><tr><th>Acordo</th><th>Homologado</th><th class="r">Valor</th><th class="r">Trab.</th></tr></thead><tbody id="ac"></tbody></table></div>
+      </section>
+      <section class="card" id="passivo">
+        <h2>Passivo do projeto por natureza</h2>
+        <p class="note">Valor de referência em cerca de 1.500 processos, corte em 10/05/2026 (levantamento da Helius Minerals). Não é o valor final devido.</p>
+        <div class="bars" id="bars"></div>
+      </section>
+    </div>
+  </div>
+
+  <footer>Compilado de imprensa regional, comunicados de empresas e atos públicos. Números de processo marcados como "Não divulgado" não foram publicados pelas fontes. Notícias atualizadas a cada hora; análise dos processos atualizada a cada hora quando há novidade confirmada.</footer>
+</div>
+
+<script>
+(async function(){
+  const $ = (id) => document.getElementById(id);
+  const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+  const compact = (v) => 'R$ ' + new Intl.NumberFormat('pt-BR',{notation:'compact',maximumFractionDigits:1}).format(v);
+  const full = (v) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}).format(v);
+  const int = (v) => new Intl.NumberFormat('pt-BR').format(v);
+  const dmy = (s) => { const [y,m,d] = String(s).slice(0,10).split('-'); return d+'/'+m+'/'+y; };
+  const safe = (u) => /^https:\/\//.test(String(u)) ? String(u) : null;
+  const host = (u) => { try { return new URL(u).hostname.replace(/^www\./,''); } catch(e){ return 'fonte'; } };
+  const PEND = ['Aguardando decisão','Aguardando cumprimento','Travado','Contestado'];
+  const lvl = (s) => (s==='Travado'||s==='Contestado') ? 'bad' : s.startsWith('Aguardando') ? 'warn' : ['Em cumprimento','Liminar suspensa','Decidido'].includes(s) ? 'ok' : 'mute';
+  const get = (n) => fetch('data/' + n + '.json?v=' + Date.now(), {cache:'no-store'}).then((r) => { if (!r.ok) throw new Error(n); return r.json(); });
+
+  let P, E, A, V, M;
+  try { [P, E, A, V, M] = await Promise.all(['processos','eventos','acordos','passivo','meta'].map(get)); }
+  catch (e) { $('take').textContent = 'Não foi possível carregar os dados. Recarregue a página.'; $('take').className = 'take err'; return; }
+
+  E.sort((a,b) => String(b.data).localeCompare(String(a.data)));
+  const pend = P.filter((p) => PEND.includes(p.situacao)).length;
+  const vAc = A.reduce((s,a) => s + Number(a.valor), 0), tAc = A.reduce((s,a) => s + Number(a.trabalhadores), 0);
+  const vPa = V.reduce((s,r) => s + Number(r.valor), 0);
+
+  const take = $('take'); take.replaceChildren();
+  const b = (t) => { const x = el('b', null, t); return x; };
+  take.append(b(String(pend)), ' de ', b(String(P.length)), ' frentes judiciais e administrativas aguardam decisão.');
+  if (E[0]) take.append(' Último movimento: ', b(E[0].evento), ' (' + E[0].data_label + ').');
+  if (M && M.atualizado) { const d = new Date(M.atualizado); $('upd').textContent = 'Atualizado em ' + d.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'}); }
+
+  const kpi = (l, v, n, hl) => { const k = el('div','kpi' + (hl ? ' hl' : '')); k.append(el('span','l',l), el('span','v',v), el('span','n',n)); return k; };
+  $('kpis').append(
+    kpi('Processos monitorados', int(P.length), 'Judiciais e na ANM'),
+    kpi('Aguardando decisão', int(pend), 'Inclui cumprimento travado', true),
+    kpi('Acordos trabalhistas 2026', compact(vAc), 'Homologados em Parauapebas'),
+    kpi('Trabalhadores nos acordos', int(tAc), 'Ex-empregados do projeto'),
+    kpi('Passivo de referência', compact(vPa), 'Levantamento de mai/2026')
+  );
+
+  const ac = $('ac');
+  A.forEach((r) => { const tr = el('tr'); tr.append(el('td',null,r.acordo), el('td',null,dmy(r.homologado)), el('td','r',full(Number(r.valor))), el('td','r',int(Number(r.trabalhadores)))); ac.append(tr); });
+
+  const max = Math.max(...V.map((r) => Number(r.valor)), 1);
+  V.slice().sort((a,b) => b.valor - a.valor).forEach((r) => {
+    const row = el('div','bar'), t = el('div','bt'), f = el('div','bf'); f.style.width = (Number(r.valor)/max*100) + '%'; t.append(f);
+    row.append(el('span',null,r.categoria), t, el('span','bv',compact(Number(r.valor)))); $('bars').append(row);
+  });
+
+  let frente = 'Todas';
+  try { const h = decodeURIComponent(location.hash.slice(1)); if (h && P.some((p) => p.frente === h)) frente = h; } catch(e){}
+  const fronts = ['Todas', ...new Set(P.map((p) => p.frente))];
+
+  function draw(){
+    $('chips').replaceChildren(...fronts.map((f) => { const c = el('button','chip',f); c.type='button'; c.setAttribute('aria-pressed', String(f===frente)); c.onclick = () => { frente = f; draw(); }; return c; }));
+    const rows = P.filter((r) => frente==='Todas' || r.frente===frente).sort((x,y) => String(y.ultima).localeCompare(String(x.ultima)));
+    $('cards').replaceChildren(...rows.map((r) => {
+      const c = el('article','card'); c.id = 'proc-' + r.id;
+      const top = el('div','top'); top.append(el('span','fr',r.frente), el('span','pill ' + lvl(r.situacao), r.situacao));
+      const nx = el('div','next'); nx.append(el('span',null,'Próximo passo'), el('span',null,r.proximo));
+      const meta = el('div','meta'); meta.append(el('span',null,'Última movimentação: ' + r.ultima_label));
+      const u = safe(r.fonte); if (u) { const a = el('a',null,host(u)); a.href = u; a.target = '_blank'; a.rel = 'noopener'; meta.append(a); }
+      c.append(top, el('h3',null,r.titulo), el('span','num',r.numero), el('span','org',r.orgao), el('p','res',r.resumo), nx, meta);
+      return c;
+    }));
+    const ev = E.filter((r) => frente==='Todas' || r.frente===frente);
+    $('tl').replaceChildren(...(ev.length ? ev.map((r) => {
+      const li = el('li'), body = el('div'), u = safe(r.fonte);
+      const t = el(u ? 'a' : 'span', null, r.evento); if (u) { t.href = u; t.target = '_blank'; t.rel = 'noopener'; }
+      body.append(el('div','f',r.frente), t); li.append(el('span','d',r.data_label), body); return li;
+    }) : [el('li','note','Nenhum evento nesta frente.')]));
+  }
+  draw();
+
+  try {
+    const N = await get('noticias');
+    const fmt = (iso) => new Date(iso).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    if (N.verificado) $('news-upd').textContent = 'Verificado em ' + fmt(N.verificado);
+    const items = (N.itens || []).slice(0, 12);
+    $('news').replaceChildren(...(items.length ? items.map((n) => {
+      const li = el('li'), u = safe(n.url), t = el(u ? 'a' : 'span', null, n.titulo);
+      if (u) { t.href = u; t.target = '_blank'; t.rel = 'noopener'; }
+      li.append(t, el('span','s',(n.fonte ? n.fonte + ' · ' : '') + fmt(n.data))); return li;
+    }) : [el('li','note','Nenhuma notícia nova nos últimos 60 dias.')]));
+  } catch (e) { $('news').replaceChildren(el('li','note','A coleta automática de notícias ainda não rodou.')); }
+})();
+</script>
+</body>
+</html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monitor Serra Pelada</title>
+<meta name="description" content="Processos, decisões judiciais e movimentos administrativos sobre Serra Pelada (Curionópolis/PA).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+/* Layout: cabeçalho + faixa de indicadores, cartões de processos filtráveis, linha do tempo ao lado de acordos e passivo */
+:root{
+  --bg:#f5f6f3; --panel:#ffffff; --fg:#1b1f1c; --muted:#5d655f; --line:#dfe2dc;
+  --accent:#9a6400; --accent-soft:#f3e7cf; --bad:#b4372c; --warn:#a06200; --ok:#2f7a45; --bar-muted:#c9cec7;
+  --serif:"Source Serif 4",Georgia,serif; --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#111412; --panel:#1a1e1b; --fg:#e8ebe6; --muted:#9aa39c; --line:#2c322e;
+  --accent:#e0a640; --accent-soft:#3a2f1a; --bad:#ef7a6e; --warn:#e3a94a; --ok:#6cc487; --bar-muted:#3b423d; color-scheme:dark;}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.45}
+.wrap{max-width:78rem;margin-inline:auto;padding-block:32px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:32px}
+header{display:flex;flex-direction:column;gap:6px;border-bottom:2px solid var(--fg);padding-bottom:18px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(2rem,4vw,2.8rem);margin:0;line-height:1.05;text-wrap:balance}
+.take{margin:6px 0 0;color:var(--muted);max-width:66ch;font-size:16px}
+.take b{color:var(--fg);font-weight:600}
+.upd{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.kpi .l{font-size:13px;color:var(--muted)}
 .kpi .v{font-family:var(--serif);font-size:2rem;line-height:1.1;font-variant-numeric:tabular-nums}
 .kpi .n{font-size:12px;color:var(--muted)}
 .kpi.hl{background:var(--accent-soft);border-color:transparent}
