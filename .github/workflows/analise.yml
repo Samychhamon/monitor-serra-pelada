@@ -1,0 +1,60 @@
+name: Análise com Claude (de hora em hora)
+on:
+  schedule:
+    - cron: '35 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+  id-token: write
+concurrency:
+  group: publicar-dados
+  cancel-in-progress: false
+jobs:
+  analise:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      TEM_CHAVE: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+    steps:
+      - name: Verificar chave
+        if: env.TEM_CHAVE != 'true'
+        run: echo "Segredo ANTHROPIC_API_KEY ainda não configurado; análise pulada."
+      - uses: actions/checkout@v4
+        if: env.TEM_CHAVE == 'true'
+      - name: Atualizar dados com Claude
+        if: env.TEM_CHAVE == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          claude_args: '--model sonnet --max-turns 40 --allowedTools "WebSearch,WebFetch,Read,Write,Edit,Bash(python3:*)"'
+          prompt: |
+            Você mantém o site público "Monitor Serra Pelada" (Curionópolis/PA). Os dados ficam nos arquivos JSON da pasta data/ deste repositório. Fuso: America/Sao_Paulo.
+            Leia primeiro data/processos.json, data/eventos.json, data/acordos.json e data/noticias.json (manchetes coletadas automaticamente na última hora; use como pista, não como fonte final).
+            Pesquise na web novidades das últimas 48 horas: "Serra Pelada" + decisão/justiça/processo; Coomigasp (diretoria, intervenção, eleição, reintegração de posse, TJPA); Justiça do Trabalho de Parauapebas (acordos, penhora, avaliação, leilão do direito minerário); Helius Minerals / Colossus / SPCDM (fechamento da aquisição, ANM, cautelar no TJPE 0069402-29.2026.8.17.2001); ANM (processo 850.425/1990, área de ferro Coompro); Caixa x Coomigasp no TRF1; ação civil pública ambiental; MPF/MPPA. Confirme abrindo a reportagem. Nunca invente números, datas ou números de processo; registre só o que a fonte publicou.
+            Regras de edição (mantenha os esquemas e o JSON válido, UTF-8, sem quebrar campos existentes):
+            - data/processos.json: lista de {id:"Pnn", frente:"Cooperativa"|"Trabalhista"|"Mineradora"|"Federal"|"ANM"|"Ambiental", titulo, numero (ou "Não divulgado"), orgao, situacao:"Aguardando decisão"|"Aguardando cumprimento"|"Travado"|"Contestado"|"Em vigor"|"Em cumprimento"|"Em andamento"|"Liminar suspensa"|"Decidido", ultima:"AAAA-MM-DD", ultima_label, resumo (1–3 frases), proximo, fonte (https)}. Atualize quando houver movimento real; acrescente processos novos com o próximo id livre. Não apague linhas.
+            - data/eventos.json: lista de {data:"AAAA-MM-DD", data_label, frente, evento (até ~110 caracteres), fonte (https)}, do mais recente para o mais antigo, sem duplicar.
+            - data/acordos.json: lista de {acordo, homologado:"AAAA-MM-DD", vara, valor:number, trabalhadores:int, fonte}.
+            - Se algo mudou, grave data/meta.json como {"atualizado": "<agora em ISO 8601 com -03:00>"}. Se nada mudou, não altere nenhum arquivo.
+            Não altere index.html, scripts/, .github/ nem data/noticias.json e data/passivo.json. Não faça commit; o próximo passo do fluxo publica.
+      - name: Validar e publicar
+        if: env.TEM_CHAVE == 'true'
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          ok = True
+          for n in ['processos','eventos','acordos','passivo','meta']:
+              try:
+                  d = json.load(open(f'data/{n}.json', encoding='utf-8'))
+                  if n != 'meta' and (not isinstance(d, list) or not d): raise ValueError('lista vazia')
+              except Exception as e:
+                  print('inválido:', n, e); ok = False
+          sys.exit(0 if ok else 1)
+          PY
+          git config user.name "monitor-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/processos.json data/eventos.json data/acordos.json data/meta.json
+          git diff --cached --quiet && { echo "sem novidades"; exit 0; }
+          git commit -m "Análise: atualização automática"
+          git pull --rebase origin main && git push origin HEAD:main
