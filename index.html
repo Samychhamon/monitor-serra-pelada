@@ -48,7 +48,7 @@ nav.tabs button:focus-visible,button:focus-visible,a:focus-visible,input:focus-v
 .pane[hidden]{display:none}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,10.5rem),1fr));gap:12px}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
-.kpi .l{font-size:13px;color:var(--muted)}.kpi .v{font-family:var(--serif);font-size:clamp(1.3rem,2.4vw,1.8rem);line-height:1.15;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}.kpi .n{font-size:12px;color:var(--muted)}
+.kpi .l{font-size:13px;color:var(--muted)}.kpi .v{font-family:var(--serif);font-size:1.8rem;line-height:1.15;white-space:nowrap;font-variant-numeric:tabular-nums}.kpi .n{font-size:12px;color:var(--muted)}
 h2{font-size:18px;font-weight:600;margin:0}
 .note{font-size:13px;color:var(--muted);margin:0}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,22rem),1fr));gap:12px}
@@ -103,6 +103,15 @@ textarea{min-height:5.5rem;resize:vertical}
 .pchip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .tag.pt{background:var(--ok-soft)}.tag.pc{background:var(--accent-soft)}.tag.pl{background:var(--line)}.tag.af{background:var(--bad-soft);color:var(--bad)}
 .sechead{display:flex;flex-direction:column;gap:2px}
+.ckbar{height:10px;border-radius:999px;background:var(--line);overflow:hidden;margin-top:4px}.ckfill{height:100%;background:var(--ok);border-radius:999px}
+.ck{display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.ck:last-child{border-bottom:0}
+.ck .ic{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;border:2px solid currentColor}
+.ck .ic.ok{background:var(--ok);border-color:var(--ok);color:#fff}.ck .ic.warn{color:var(--warn)}.ck .ic.mute{color:var(--muted)}
+.ck h4{margin:0;font-size:14px;font-weight:600}.ck p{margin:2px 0 0;font-size:13px;color:var(--muted)}.ck a{color:var(--accent);font-size:12px}
+.ck .side{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:12px;color:var(--muted);white-space:nowrap}
+.ck.done h4{color:var(--muted);font-weight:500}
+@media (max-width:560px){.ck{grid-template-columns:28px 1fr}.ck .side{grid-column:2;align-items:flex-start}}
 footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
 </style>
 </head>
@@ -127,6 +136,7 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
   <div class="pfilter" id="pfilter" role="group" aria-label="Filtrar por projeto"></div>
 
   <section class="pane" id="p-geral" role="tabpanel"></section>
+  <section class="pane" id="p-check" role="tabpanel" hidden></section>
   <section class="pane" id="p-lo" role="tabpanel" hidden></section>
   <section class="pane" id="p-orgao" role="tabpanel" hidden></section>
   <section class="pane" id="p-docs" role="tabpanel" hidden>
@@ -162,7 +172,7 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
   const fmtDT = (iso) => { try { return new Date(iso).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'}); } catch(e){ return ''; } };
   const today = () => { const p = new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo'}).format(new Date()); return new Date(p + 'T00:00:00Z'); };
   const daysTo = (iso) => Math.round((new Date(String(iso).slice(0,10) + 'T00:00:00Z') - today()) / 864e5);
-  const ABAS = [['geral','Visão geral'], ['lo','Licença de Operação'], ['anm','ANM'], ['semas','SEMAS'], ['prefeitura','Prefeitura de Curionópolis'], ['governo','Governo do Pará'], ['mp','MPF e MPPA'], ['jf','Justiça Federal'], ['je','Justiças Estaduais'], ['jt','Justiça do Trabalho'], ['diarios','Diários Oficiais'], ['docs','Documentos']];
+  const ABAS = [['geral','Visão geral'], ['check','Checklist de operação'], ['lo','Licença de Operação'], ['anm','ANM'], ['semas','SEMAS'], ['prefeitura','Prefeitura de Curionópolis'], ['governo','Governo do Pará'], ['mp','MPF e MPPA'], ['jf','Justiça Federal'], ['je','Justiças Estaduais'], ['jt','Justiça do Trabalho'], ['diarios','Diários Oficiais'], ['docs','Documentos']];
   const ORGAO_DESC = {
     anm: 'Agência Nacional de Mineração: só os títulos do projeto (850.424/1990, 850.425/1990, 851.087/2014) e atos sobre Coomigasp, Tec Tônicas, Colossus, Helius e SPCDM.',
     semas: 'Secretaria de Estado de Meio Ambiente, Clima e Sustentabilidade do Pará: licenças, outorgas e fiscalizações do projeto.',
@@ -175,7 +185,7 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
     diarios: 'Publicações no Diário Oficial da União e no Diário Oficial do Estado do Pará que citem o projeto, as empresas ou os títulos ANM.'
   };
   const PROJ = {tectonicas: ['Projeto Tec Tônicas','pt'], coomigasp: ['Coomigasp (titular dos direitos)','pc'], legado: ['Projeto antigo Colossus/SPCDM · Helius','pl']};
-  const state = { painel: null, itens: [], eventos: [], noticias: [], conds: [], docs: [], tab: 'geral', q: '', proj: 'todos' };
+  const state = { painel: null, itens: [], eventos: [], noticias: [], conds: [], docs: [], check: [], tab: 'geral', q: '', proj: 'todos' };
   const fp = (arr) => state.proj === 'todos' ? arr : arr.filter((x) => x.projeto === state.proj);
   const PEND = ['Aguardando decisão','Aguardando cumprimento','Travado','Contestado'];
   const lvl = (s) => (s==='Travado'||s==='Contestado') ? 'bad' : String(s).startsWith('Aguardando') ? 'warn' : ['Em cumprimento','Liminar suspensa','Decidido','Vigente','Em vigor'].includes(s) ? 'ok' : 'mute';
@@ -190,15 +200,15 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
     $('tabs').replaceChildren(...ABAS.map(([k, label]) => {
       const b = el('button', null, label); b.type = 'button'; b.setAttribute('role','tab'); b.setAttribute('aria-selected', String(state.tab === k));
       let n = null;
-      if (!['geral','lo','docs'].includes(k)) n = fp(state.itens).filter((i) => i.aba === k).length;
-      if (k === 'docs') n = state.docs.length;
+      if (!['geral','lo','docs','check'].includes(k)) n = fp(state.itens).filter((i) => i.aba === k).length;
+      if (k === 'docs') n = state.docs.length; if (k === 'check' && state.check.length) n = ckDone() + '/' + ckTot();
       if (k === 'lo' && overdue) b.append(el('span','cnt b', String(overdue))); else if (n != null) b.append(el('span','cnt', String(n)));
       b.onclick = () => { state.tab = k; try { history.replaceState(null, '', '#' + k); } catch(e){} render(); };
       return b;
     }));
   }
   function drawPF(){
-    const pf = $('pfilter'); pf.hidden = ['lo','docs'].includes(state.tab); if (pf.hidden) return;
+    const pf = $('pfilter'); pf.hidden = ['lo','docs','check'].includes(state.tab); if (pf.hidden) return;
     pf.replaceChildren(el('span', null, 'Projeto:'), ...[['todos','Todos'], ['tectonicas','Tec Tônicas'], ['coomigasp','Coomigasp'], ['legado','Colossus/SPCDM · Helius']].map(([k, l]) => {
       const b = el('button','pchip', l); b.type = 'button'; b.setAttribute('aria-pressed', String(state.proj === k)); b.onclick = () => { state.proj = k; render(); }; return b; }));
   }
@@ -256,6 +266,7 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
     const prox = condAbertas.filter((c) => c.prazo).sort((a,b) => String(a.prazo).localeCompare(String(b.prazo)))[0];
     const k = el('div','kpis');
     const kpi = (l, v, n) => { const d = el('div','kpi'); d.append(el('span','l',l), el('span','v',v), el('span','n',n)); return d; };
+    if (state.check.length) k.append(kpi('Prontidão para operar', ckDone() + ' de ' + ckTot(), 'Itens do checklist concluídos'));
     k.append(kpi('Licença de Operação', 'LO 16496/2026', 'SEMAS · válida até 15/10/2030'), kpi('Condicionantes em aberto', String(condAbertas.length), prox ? 'Próxima: ' + dmy(prox.prazo) : 'Nenhuma com prazo'),
       kpi('Atos do projeto Tec Tônicas', String(state.itens.filter((i) => i.projeto === 'tectonicas').length), 'ANM, SEMAS, Justiça e DOU'), kpi('Riscos herdados', String(state.itens.filter((i) => i.afeta).length), 'Podem afetar a Tec Tônicas'), kpi('Documentos no banco', String(state.docs.length), 'Registros do projeto'));
     p.append(k);
@@ -335,11 +346,39 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
       w.append(m); return w;
     }));
   }
+  function ckTot(){ return state.check.filter((c) => c.status !== 'nao_aplica').length; }
+  function ckDone(){ return state.check.filter((c) => c.status === 'concluido').length; }
+  function drawCheck(){
+    const p = $('p-check'); p.replaceChildren();
+    const tot = ckTot(), done = ckDone(), pct = tot ? Math.round(done / tot * 100) : 0;
+    const cnt = (s) => state.check.filter((c) => c.status === s).length;
+    const head = el('div','card');
+    head.append(el('h2', null, 'Checklist para iniciar a operação'), el('p','note','O que a Tec Tônicas já cumpriu e o que falta para operar o empreendimento. Itens "a verificar" dependem de documentos internos da empresa: quando forem enviados, passam a concluídos.'));
+    const bar = el('div','ckbar'); const fill = el('div','ckfill'); fill.style.width = pct + '%'; bar.append(fill);
+    const lg = el('div','row'); lg.append(el('b', null, done + ' de ' + tot + ' itens concluídos (' + pct + '%)'), el('span','note', cnt('pendente') + ' pendentes com prazo · ' + cnt('verificar') + ' a verificar'));
+    head.append(bar, lg); p.append(head);
+    const ST = {concluido: ['Concluído','ok','✓'], pendente: ['Pendente','warn','!'], verificar: ['A verificar','mute','?'], nao_aplica: ['Se aplicável','mute','–']};
+    [['direito','Direito de operar'], ['ambiental','Licenciamento ambiental'], ['lo','Exigências da LO com prazo'], ['regular','Licenças e cadastros complementares'], ['seguranca','Segurança e operação']].forEach(([f, titulo]) => {
+      const list = state.check.filter((c) => c.fase === f); if (!list.length) return;
+      const box = el('div','card'); const h = el('div','row'); h.append(el('h2', null, titulo), el('span','note', list.filter((c) => c.status === 'concluido').length + ' de ' + list.filter((c) => c.status !== 'nao_aplica').length)); box.append(h);
+      list.forEach((c) => {
+        const st = ST[c.status] || ST.verificar;
+        const row = el('div','ck' + (c.status === 'concluido' ? ' done' : ''));
+        const body = el('div'); body.append(el('h4', null, c.titulo)); if (c.detalhe) body.append(el('p', null, c.detalhe));
+        const u = safe(c.fonte); if (u) { const a = el('a', null, 'Ver fonte'); a.href = u; a.target = '_blank'; a.rel = 'noopener'; body.append(a); }
+        const side = el('div','side'); let cls = st[1], label = st[0];
+        if (c.prazo && c.status !== 'concluido') { const d = daysTo(c.prazo); if (d < 0) { cls = 'bad'; label = 'Vencido'; } side.append(el('span', null, 'Até ' + dmy(c.prazo) + (d >= 0 ? ' (' + d + ' dias)' : ''))); }
+        side.prepend(el('span','pill ' + cls, label));
+        row.append(el('span','ic ' + st[1], st[2]), body, side); box.append(row);
+      });
+      p.append(box);
+    });
+  }
   function render(){
     drawTabs(); drawPF(); drawHeader();
     const t = state.tab;
-    $('p-geral').hidden = t !== 'geral'; $('p-lo').hidden = t !== 'lo'; $('p-docs').hidden = t !== 'docs'; $('p-orgao').hidden = ['geral','lo','docs'].includes(t);
-    if (t === 'geral') drawGeral(); else if (t === 'lo') drawLO(); else if (t === 'docs') drawDocs(); else drawOrgao(t);
+    $('p-geral').hidden = t !== 'geral'; $('p-lo').hidden = t !== 'lo'; $('p-docs').hidden = t !== 'docs'; $('p-check').hidden = t !== 'check'; $('p-orgao').hidden = ['geral','lo','docs','check'].includes(t);
+    if (t === 'geral') drawGeral(); else if (t === 'check') drawCheck(); else if (t === 'lo') drawLO(); else if (t === 'docs') drawDocs(); else drawOrgao(t);
   }
   render();
   const get = (n) => fetch('data/' + n + '.json?v=' + Date.now(), {cache: 'no-store'}).then((r) => { if (!r.ok) throw new Error(n); return r.json(); });
@@ -348,6 +387,7 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
     state.painel = D.painel || null; state.itens = D.itens || []; state.eventos = (D.eventos || []).slice().sort((a,b) => String(b.data).localeCompare(String(a.data)));
     state.conds = D.condicionantes || []; state.docs = (D.documentos || []).slice().sort((a,b) => String(b.criado).localeCompare(String(a.criado)));
   } catch(e) { $('upd').textContent = 'Não foi possível carregar os dados. Recarregue a página.'; }
+  try { const K = await get('checklist'); state.check = Array.isArray(K) ? K : []; } catch(e) {}
   try { const N = await get('noticias'); state.noticias = Array.isArray(N.itens) ? N.itens : []; } catch(e) {}
   render();
 })();
